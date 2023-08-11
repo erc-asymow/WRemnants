@@ -56,7 +56,10 @@ if __name__ == "__main__":
                               continue
                          print(f"{space}{k}")                         
                          if args.what == "axes":
-                              print(f"{space}  Axes = {results[p]['output'][k].axes.name}")
+                              histObj = results[p]['output'][k]
+                              if isinstance(histObj, ioutils.H5PickleProxy):
+                                   histObj = histObj.get()
+                              print(f"{space}  Axes = {histObj.axes.name}")
                               if k == args.histo:
-                                   for n in results[p]['output'][k].axes:
+                                   for n in histObj.axes:
                                         print(f"{space}{space} {n}")
