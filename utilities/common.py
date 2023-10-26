@@ -210,6 +210,7 @@ def common_parser(for_reco_highPU=False):
         parser.add_argument("--sf2DnoUt", action='store_true', help="Use older smooth 2D scale factors with no ut dependence")
         parser.add_argument("--isoEfficiencySmoothing", action='store_true', help="If isolation SF was derived from smooth efficiencies instead of direct smoothing") 
         parser.add_argument("--noScaleFactors", action="store_true", help="Don't use scale factors for efficiency (legacy option for tests)")
+        parser.add_argument("--dataYear", default=2016, type=int, help="year for which the analysis is performed")
     commonargs,_ = parser.parse_known_args()
 
     if for_reco_highPU:

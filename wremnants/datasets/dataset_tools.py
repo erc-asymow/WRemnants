@@ -13,6 +13,7 @@ from wremnants.datasets.datasetDict_gen import genDataDict
 from wremnants.datasets.datasetDict_lowPU import dataDictLowPU
 import ROOT
 import XRootD.client
+from wremnants.datasets.datasetDict2018_v9 import dataDictV9_2018
 
 logger = logging.child_logger(__name__)
 
@@ -207,6 +208,9 @@ def getDatasets(maxFiles=default_nfiles, filt=None, excl=None, mode=None, base_p
     if maxFiles is None:
         maxFiles=default_nfiles
 
+def getDatasets(maxFiles=-1, filt=None, excl=None, mode=None, base_path=None, nanoVersion="v9", 
+                data_tag="TrackFitV722_NanoProdv2", mc_tag="TrackFitV718_NanoProdv1", oneMCfileEveryN=None, checkFileForZombie=False, dataYear=2016):
+
     if not base_path:
         base_path = getDataPath(mode)
     logger.info(f"Loading samples from {base_path}.")
@@ -220,6 +224,9 @@ def getDatasets(maxFiles=default_nfiles, filt=None, excl=None, mode=None, base_p
         dataDict.update(genDataDict)     
     elif mode and "lowpu" in mode:
         dataDict = dataDictLowPU
+    if dataYear == 2018:
+        dataDict = dataDictV9_2018
+        logger.info('Using NanoAOD V9 for 2018')
 
     narf_datasets = []
     for sample,info in dataDict.items():
