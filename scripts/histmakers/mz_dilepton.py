@@ -34,7 +34,9 @@ thisAnalysis = ROOT.wrem.AnalysisType.Dilepton
 datasets = getDatasets(maxFiles=args.maxFiles,
                         filt=args.filterProcs,
                         excl=args.excludeProcs, 
-                        nanoVersion="v9", base_path=args.dataPath)
+                        nanoVersion="v9",
+                        base_path=args.dataPath,
+                        dataYear=args.dataYear)
 
 era = args.era
 
@@ -113,8 +115,8 @@ else:
                                                                                                                                      what_analysis = thisAnalysis, isoEfficiencySmoothing=args.isoEfficiencySmoothing, smooth3D=args.smooth3dsf)
 logger.info(f"SF file: {args.sfFile}")
 
-pileup_helper = wremnants.make_pileup_helper(era = era)
-vertex_helper = wremnants.make_vertex_helper(era = era)
+pileup_helper = wremnants.make_pileup_helper(era = era, dataYear = args.dataYear)
+vertex_helper = wremnants.make_vertex_helper(era = era, dataYear = args.dataYear)
 
 calib_filepaths = common.calib_filepaths
 closure_filepaths = common.closure_filepaths
@@ -175,8 +177,8 @@ def build_graph(df, dataset):
 
             results.append(df_gen.HistoBoost(f"gen_{obs}", [all_axes[obs]], [obs, "nominal_weight"]))
             df_gen = syst_tools.add_theory_hists(results, df_gen, args, dataset.name, corr_helpers, qcdScaleByHelicity_helper, [all_axes[obs]], [obs], base_name=f"gen_{obs}", for_wmass=False)
-
-    df = df.Filter("HLT_IsoTkMu24 || HLT_IsoMu24")
+    hltString="HLT_IsoTkMu24 || HLT_IsoMu24" if args.dataYear == 2016 else "HLT_IsoMu24"
+    df = df.Filter(hltString)
 
     df = muon_selections.veto_electrons(df)
     df = muon_selections.apply_met_filters(df)
