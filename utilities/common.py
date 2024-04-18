@@ -121,6 +121,18 @@ def get_binning_fakes_mt(mt_cut=40):
     edges = np.append(edges, [e for e in [30,32,34,36,38,40,44,49,55,62] if e>mt_cut])
     return edges
 
+def get_dilepton_ptV_binning(fine=False):
+    return [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 20, 23, 27, 32, 40, 54, 100] if not fine else range(60)
+
+def get_gen_axes(flow=False, dilepton_ptV_binning=None):
+    if dilepton_ptV_binning is None:
+        dilepton_ptV_binning = get_dilepton_ptV_binning()
+    gen_axes = {
+        "ptVGen": hist.axis.Variable(dilepton_ptV_binning, name = "ptVGen", underflow=False, overflow=flow),
+        "absYVGen": hist.axis.Regular(10, 0, 2.5, name = "absYVGen", underflow=False, overflow=flow),  
+    }
+    return gen_axes
+
 # following list is used in other scripts to track what steps are charge dependent
 # but assumes the corresponding efficiencies were made that way
 muonEfficiency_chargeDependentSteps = ["reco", "tracking", "idip", "trigger", "antitrigger"] # antitrigger = P(failTrig|IDIP), similar to antiiso = P(failIso|trigger)
@@ -171,7 +183,7 @@ def set_subparsers(subparser, name):
         if name == "theoryAgnosticPolVar":
             subparser.add_argument("--theoryAgnosticFilePath", type=str, default=".",
                                    help="Path where input files are stored")
-            subparser.add_argument("--theoryAgnosticFileTag", type=str, default="x0p30_y3p00_V4", choices=["x0p30_y3p00_V4", "x0p30_y3p00_V5", "x0p40_y3p50_V6"],
+            subparser.add_argument("--theoryAgnosticFileTag", type=str, default="x0p30_y3p00_V8", choices=["x0p30_y3p00_V4", "x0p30_y3p00_V5", "x0p40_y3p50_V6", "x0p30_y3p00_V7", "x0p30_y3p00_V8"],
                                    help="Tag for input files")
             subparser.add_argument("--theoryAgnosticSplitOOA", action='store_true',
                                    help="Define out-of-acceptance signal template as an independent process")
@@ -254,7 +266,7 @@ def common_parser(for_reco_highPU=False):
     parser.add_argument("--noVertexWeight", action='store_true', help="Do not apply reweighting of vertex z distribution in MC to match data")
     parser.add_argument("--validationHists", action='store_true', help="make histograms used only for validations")
     parser.add_argument("--onlyMainHistograms", action='store_true', help="Only produce some histograms, skipping (most) systematics to run faster when those are not needed")
-    parser.add_argument("--met", type=str, choices=["DeepMETReso", "RawPFMET", "DeepMETPVRobust", "DeepMETPVRobustNoPUPPI"], help="MET (DeepMETReso or RawPFMET)", default="DeepMETReso")
+    parser.add_argument("--met", type=str, choices=["DeepMETReso", "RawPFMET", "DeepMETPVRobust", "DeepMETPVRobustNoPUPPI"], help="Choice of MET", default="DeepMETPVRobust")
     parser.add_argument("-o", "--outfolder", type=str, default="", help="Output folder")
     parser.add_argument("--appendOutputFile", type=str, default="", help="Append analysis output to specified output file")
     parser.add_argument("-e", "--era", type=str, choices=["2016PreVFP","2016PostVFP", "2017", "2018"], help="Data set to process", default="2016PostVFP")

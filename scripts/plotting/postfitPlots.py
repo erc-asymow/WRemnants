@@ -74,20 +74,30 @@ translate_selection = {
 
 def make_plot(h_data, h_inclusive, h_stack, axes, colors=None, labels=None, suffix="", chi2=None, meta=None, saturated_chi2=False, lumi=None):
     axes_names = [a.name for a in axes]
+
+    if any(x in axes_names for x in ["ptll", "mll", "ptVgen", "ptVGen"]):
+        # in case of variable bin width normalize to unit
+        binwnorm = 1.0
+        ylabel="Events/unit"
+    else:
+        binwnorm = None
+        ylabel="Events/bin"
+
     if len(h_data.axes) > 1:
         if "eta" in axes_names[-1]:
+            logger.info("invert eta order")
             axes_names = axes_names[::-1]
         # make unrolled 1D histograms
-        h_data = hh.unrolledHist(h_data, binwnorm=1, obs=axes_names)
-        h_inclusive = hh.unrolledHist(h_inclusive, binwnorm=1, obs=axes_names)
-        h_stack = [hh.unrolledHist(h, binwnorm=1, obs=axes_names) for h in h_stack]
+        h_data = hh.unrolledHist(h_data, binwnorm=binwnorm, obs=axes_names)
+        h_inclusive = hh.unrolledHist(h_inclusive, binwnorm=binwnorm, obs=axes_names)
+        h_stack = [hh.unrolledHist(h, binwnorm=binwnorm, obs=axes_names) for h in h_stack]
 
     axis_name = "_".join([a for a in axes_names])
     xlabel=f"{'-'.join([styles.xlabels.get(s,s).replace('(GeV)','') for s in axes_names])} bin"
     if ratio:
-        fig, ax1, ax2 = plot_tools.figureWithRatio(h_data, xlabel, "Entries/bin", args.ylim, "Data/Pred.", args.rrange)
+        fig, ax1, ax2 = plot_tools.figureWithRatio(h_data, xlabel, ylabel, args.ylim, "Data/Pred.", args.rrange)
     else:
-        fig, ax1 = plot_tools.figure(h_data, xlabel, "Entries/bin", args.ylim)
+        fig, ax1 = plot_tools.figure(h_data, xlabel, ylabel, args.ylim)
 
     hep.histplot(
         h_stack,
@@ -98,7 +108,7 @@ def make_plot(h_data, h_inclusive, h_stack, axes, colors=None, labels=None, suff
         label=labels,
         stack=True,
         density=False,
-        binwnorm=1.0,
+        binwnorm=binwnorm,
         ax=ax1,
         zorder=1,
         flow='none',
@@ -111,7 +121,7 @@ def make_plot(h_data, h_inclusive, h_stack, axes, colors=None, labels=None, suff
             histtype="errorbar",
             color="black",
             label="Data",
-            binwnorm=1.0,
+            binwnorm=binwnorm,
             ax=ax1,
             alpha=1.,
             zorder=2,
@@ -185,7 +195,7 @@ def make_plot(h_data, h_inclusive, h_stack, axes, colors=None, labels=None, suff
     hep.cms.label(ax=ax1, lumi=float(f"{lumi:.3g}") if lumi is not None else None, fontsize=20*args.scaleleg*scale, 
         label=args.cmsDecor, data=data)
 
-    plot_tools.addLegend(ax1, ncols=2, text_size=20*args.scaleleg*scale)
+    plot_tools.addLegend(ax1, ncols=len(h_stack)//3, text_size=20*args.scaleleg*scale)
     plot_tools.fix_axes(ax1, ax2, yscale=args.yscale)
 
     to_join = [fittype, args.postfix, axis_name, suffix]

@@ -452,7 +452,7 @@ def build_graph(df, dataset):
     if not args.noRecoil:
         leps_uncorr = ["Muon_pt[goodMuons][0]", "Muon_eta[goodMuons][0]", "Muon_phi[goodMuons][0]", "Muon_charge[goodMuons][0]"]
         leps_corr = ["goodMuons_pt0", "goodMuons_eta0", "goodMuons_phi0", "goodMuons_charge0"]
-        df = recoilHelper.recoil_W(df, results, dataset, common.vprocs, leps_uncorr, leps_corr, cols_fakerate=nominal_cols, axes_fakerate=nominal_axes, mtw_min=mtw_min) # produces corrected MET as MET_corr_rec_pt/phi
+        df = recoilHelper.recoil_W(df, results, dataset, common.vprocs, leps_uncorr, leps_corr, cols_fakerate=columns_fakerate, axes_fakerate=axes_fakerate, mtw_min=mtw_min) # produces corrected MET as MET_corr_rec_pt/phi
     else:
         met = "DeepMETResolutionTune" if args.met == "DeepMETReso" else args.met
         df = df.Alias("MET_corr_rec_pt", f"{met}_pt")
@@ -496,7 +496,7 @@ def build_graph(df, dataset):
             logger.debug(f"Creating special histogram '{noiAsPoiHistName}' for theory agnostic to treat POIs as NOIs")
             results.append(df.HistoBoost(noiAsPoiHistName, [*nominal_axes, *theoryAgnostic_axes], [*nominal_cols, *theoryAgnostic_cols, "nominal_weight_helicity"], tensor_axes=[axis_helicity]))
             if isTheoryAgnosticPolVar:
-                theoryAgnostic_helpers_cols = ["qtOverQ", "absYVgen", "chargeVgen", "csSineCosThetaPhi", "nominal_weight"]
+                theoryAgnostic_helpers_cols = ["qtOverQ", "absYVgen", "chargeVgen", "csSineCosThetaPhigen", "nominal_weight"]
                 # assume to have same coeffs for plus and minus (no reason for it not to be the case)
                 for genVcharge in ["minus", "plus"]:
                     for coeffKey in theoryAgnostic_helpers_minus.keys():
