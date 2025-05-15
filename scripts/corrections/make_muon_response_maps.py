@@ -6,9 +6,9 @@ import scipy
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-import narf
-import narf.fitutils
-import narf.tfutils
+import wums.fitutils
+import wums.ioutils
+import wums.tfutils
 
 mpl.rcParams["figure.dpi"] = 300
 
@@ -30,7 +30,7 @@ procs.append("WminustaunuPostVFP")
 
 with h5py.File(infile, "r") as f:
     for proc in procs:
-        results = narf.ioutils.pickle_load_h5py(f[proc])
+        results = wums.ioutils.pickle_load_h5py(f[proc])
         hist_response_proc = results["output"]["hist_qopr"].get()
         hist_response_scaled_proc = results["output"]["hist_qopr_shifted"].get()
         hist_response_smeared_proc = results["output"]["hist_qopr_smearedmulti"].get()
@@ -78,11 +78,11 @@ quant_cdfvals_interp = tf.reshape(quant_cdfvals, [-1])
 print("quant_cdfvals", quant_cdfvals)
 
 
-quants, _ = narf.fitutils.hist_to_quantiles(hist_response, quant_cdfvals, axis=1)
-quants_scaled, _ = narf.fitutils.hist_to_quantiles(
+quants, _ = wums.fitutils.hist_to_quantiles(hist_response, quant_cdfvals, axis=1)
+quants_scaled, _ = wums.fitutils.hist_to_quantiles(
     hist_response_scaled, quant_cdfvals, axis=1
 )
-quants_smeared, _ = narf.fitutils.hist_to_quantiles(
+quants_smeared, _ = wums.fitutils.hist_to_quantiles(
     hist_response_smeared, quant_cdfvals, axis=1
 )
 
@@ -141,8 +141,8 @@ def interp_cdf(quants_sel, genPt, genEta, genCharge, qopr):
 
     qopr = tf.reshape(qopr, [-1])
 
-    # cdf = narf.fitutils.pchip_interpolate(xi = quants_interp, yi = quant_cdfvals_interp, x = qopr)
-    cdf = narf.fitutils.cubic_spline_interpolate(
+    # cdf = wums.fitutils.pchip_interpolate(xi = quants_interp, yi = quant_cdfvals_interp, x = qopr)
+    cdf = wums.fitutils.cubic_spline_interpolate(
         xi=quants_interp[..., None],
         yi=quant_cdfvals_interp[..., None],
         x=qopr[..., None],
@@ -225,7 +225,7 @@ print("res2b", res2b)
 scalar_spec = tf.TensorSpec([], tf.float64)
 input_signature = 4 * [scalar_spec]
 
-tflite_model = narf.tfutils.function_to_tflite(interp_dweight, input_signature)
+tflite_model = wums.tfutils.function_to_tflite(interp_dweight, input_signature)
 
 output_filename = "muon_response.tflite"
 
@@ -240,8 +240,8 @@ def func_pdf(h):
     xedges = [tf.constant(edge, dtype=dtype) for edge in h.axes.edges]
     axis = 1
 
-    # cdf = narf.fitutils.pchip_interpolate(xi = quants, yi = quant_cdfvals, x = xedges[axis], axis=axis)
-    cdf = narf.fitutils.cubic_spline_interpolate(
+    # cdf = wums.fitutils.pchip_interpolate(xi = quants, yi = quant_cdfvals, x = xedges[axis], axis=axis)
+    cdf = wums.fitutils.cubic_spline_interpolate(
         xi=quants, yi=quant_cdfvals, x=xedges[axis], axis=axis
     )
 

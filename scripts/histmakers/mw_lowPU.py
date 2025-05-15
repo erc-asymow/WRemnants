@@ -1,17 +1,10 @@
 import os
 
-from utilities import common, differential, logging, parsing
-from utilities.io_tools import output_tools
+from utilities import common, differential, parsing
 from wremnants.datasets.datagroups import Datagroups
 
 analysis_label = Datagroups.analysisLabel(os.path.basename(__file__))
 parser, initargs = parsing.common_parser(analysis_label)
-parser.add_argument(
-    "--lumiUncertainty",
-    type=float,
-    help=r"Uncertainty for luminosity in excess to 1 (e.g. 1.017 means 1.7%)",
-    default=1.017,
-)
 parser.add_argument(
     "--noGenMatchMC",
     action="store_true",
@@ -26,7 +19,6 @@ parser = parsing.set_parser_default(parser, "met", "RawPFMET")
 parser = parsing.set_parser_default(parser, "era", "2017H")
 
 args = parser.parse_args()
-isUnfolding = args.analysisMode == "unfolding"
 
 
 import math
@@ -44,7 +36,12 @@ from wremnants import (
     unfolding_tools,
 )
 from wremnants.datasets.dataset_tools import getDatasets
-from wremnants.histmaker_tools import aggregate_groups, scale_to_data
+from wremnants.histmaker_tools import (
+    aggregate_groups,
+    scale_to_data,
+    write_analysis_output,
+)
+from wums import logging
 
 ###################################
 flavor = args.flavor  # mu, e
@@ -120,15 +117,30 @@ gen_axes = {
         underflow=False,
         overflow=False,
     ),
+    "qVGen": hist.axis.Regular(
+        2, -2.0, 2.0, underflow=False, overflow=False, name=f"qVGen"
+    ),
 }
 
 groups_to_aggregate = args.aggregateGroups
 
-if isUnfolding:
-    unfolding_axes, unfolding_cols, unfolding_selections = (
-        differential.get_dilepton_axes(args.genAxes, gen_axes)
-    )
-    datasets = unfolding_tools.add_out_of_acceptance(datasets, group=base_group)
+if args.unfolding:
+    unfolding_axes = {}
+    unfolding_cols = {}
+    unfolding_selections = {}
+    for level in args.unfoldingLevels:
+        a, c, s = differential.get_dilepton_axes(args.unfoldingAxes, gen_axes, level)
+        unfolding_axes[level] = a
+        unfolding_cols[level] = c
+        unfolding_selections[level] = s
+
+        if not args.poiAsNoi:
+            datasets = unfolding_tools.add_out_of_acceptance(datasets, group=base_group)
+            if len(args.unfoldingLevels) > 1:
+                logger.warning(
+                    f"Exact unfolding with multiple gen level definitions is not possible, take first one: {args.unfoldingLevels[0]} and continue."
+                )
+                break
     groups_to_aggregate.append(f"{base_group}OOA")
 
 # axes/columns for unfolding ptW
@@ -197,44 +209,57 @@ def build_graph(df, dataset):
     axes = nominal_axes
     cols = nominal_cols
 
-    if isUnfolding and dataset.name in sigProcs:
+    if args.unfolding and dataset.name in sigProcs:
         df = unfolding_tools.define_gen_level(
-            df, args.genLevel, dataset.name, mode=analysis_label
+            df, dataset.name, args.unfoldingLevels, mode=analysis_label
         )
 
         if hasattr(dataset, "out_of_acceptance"):
             df = unfolding_tools.select_fiducial_space(
                 df,
+                args.unfoldingLevels[0],
                 mode="wmass",
                 pt_min=args.pt[1],
                 pt_max=args.pt[2],
                 mtw_min=mtw_min,
-                selections=unfolding_selections,
+                selections=unfolding_selections[args.unfoldingLevels[0]],
                 accept=False,
             )
         else:
-            df = unfolding_tools.select_fiducial_space(
-                df,
-                mode="wmass",
-                pt_min=args.pt[1],
-                pt_max=args.pt[2],
-                mtw_min=mtw_min,
-                selections=unfolding_selections,
-                accept=True,
-            )
+            for level in args.unfoldingLevels:
+                logger.debug(f"Select events in {level} fiducial phase space")
+                df = unfolding_tools.select_fiducial_space(
+                    df,
+                    level,
+                    mode="wmass",
+                    pt_min=args.pt[1],
+                    pt_max=args.pt[2],
+                    mtw_min=mtw_min,
+                    selections=unfolding_selections[level],
+                    select=not args.poiAsNoi,
+                    accept=True,
+                )
 
-            unfolding_tools.add_xnorm_histograms(
-                results,
-                df,
-                args,
-                dataset.name,
-                corr_helpers,
-                qcdScaleByHelicity_helper,
-                unfolding_axes,
-                unfolding_cols,
-            )
-            axes = [*axes, *unfolding_axes]
-            cols = [*cols, *unfolding_cols]
+                if args.poiAsNoi:
+                    df_xnorm = df.Filter(f"{level}_acceptance")
+                else:
+                    df_xnorm = df
+
+                unfolding_tools.add_xnorm_histograms(
+                    results,
+                    df,
+                    args,
+                    dataset.name,
+                    corr_helpers,
+                    qcdScaleByHelicity_helper,
+                    [a for a in unfolding_axes[level] if a.name != "acceptance"],
+                    [c for c in unfolding_cols[level] if c != f"{level}_acceptance"],
+                    base_name=level,
+                )
+                if not args.poiAsNoi:
+                    axes = [*axes, *unfolding_axes[level]]
+                    cols = [*cols, *unfolding_cols[level]]
+                    break
 
     if flavor == "mu":
         if not dataset.is_data:
@@ -487,12 +512,6 @@ def build_graph(df, dataset):
             "Eigen::TensorFixedSize<double, Eigen::Sizes<2>> res; auto w = nominal_weight*prefireCorr_syst; std::copy(std::begin(w), std::end(w), res.data()); return res;",
         )
 
-        # luminosity, done here as shape variation despite being a flat scaling so to facilitate propagating to fakes afterwards
-        df = df.Define(
-            "luminosityScaling",
-            f"wrem::constantScaling(nominal_weight, {args.lumiUncertainty})",
-        )
-
         for n, c, a in (("nominal", cols, axes), ("transverseMass", cols_mt, axes_mt)):
             results.append(
                 df.HistoBoost(
@@ -623,18 +642,26 @@ def build_graph(df, dataset):
             #     df = lowPUcfg.lepSF_systs(df, results, "elSF_HLT_syst",      120, "wrem::lepSF_el_HLT_syst(Lep_pt, Lep_eta, Lep_charge)", n, a, c)
             #     df = lowPUcfg.lepSF_systs(df, results, "elSF_IDISO_syst",    36,  "wrem::lepSF_el_IDISO_syst(Lep_pt, Lep_eta, Lep_charge)", n, a, c)
 
-            results.append(
-                df.HistoBoost(
-                    f"{n}_luminosity",
-                    a,
-                    [*c, "luminosityScaling"],
-                    tensor_axes=[common.down_up_axis],
-                    storage=hist.storage.Double(),
-                )
-            )
-
             if not args.noRecoil and args.recoilUnc:
                 df = recoilHelper.add_recoil_unc_W(df, results, dataset, c, a, n)
+
+    if args.unfolding and args.poiAsNoi and dataset.name in sigProcs:
+        for level in args.unfoldingLevels:
+            noiAsPoiHistName = Datagroups.histName(
+                "nominal", syst=f"{level}_yieldsUnfolding"
+            )
+            logger.debug(
+                f"Creating special histogram '{noiAsPoiHistName}' for unfolding to treat POIs as NOIs"
+            )
+            yield_axes = [*axes, *unfolding_axes[level]]
+            yield_cols = [*cols, *unfolding_cols[level]]
+            results.append(
+                df.HistoBoost(
+                    noiAsPoiHistName,
+                    yield_axes,
+                    [*yield_cols, f"nominal_weight"],
+                )
+            )
 
     if dataset.name in sigProcs:
         # dummy lepton momentum scale
@@ -669,4 +696,4 @@ if not args.noScaleToData:
     scale_to_data(resultdict)
     aggregate_groups(datasets, resultdict, groups_to_aggregate)
 
-output_tools.write_analysis_output(resultdict, f"mw_lowPU_{flavor}.hdf5", args)
+write_analysis_output(resultdict, f"mw_lowPU_{flavor}.hdf5", args)

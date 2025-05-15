@@ -6,28 +6,28 @@
 
 import os
 import pickle
+import sys
 import time
 
 import hist
 import lz4.frame
 import numpy as np
+import ROOT
 import tensorflow as tf
 import utilitiesCMG
 from scipy.interpolate import RegularGridInterpolator
 
 import narf
-import narf.fitutils
-from utilities import boostHistHelpers as hh
+import wums.fitutils
+import wums.ioutils
 from utilities import common
+from wums import boostHistHelpers as hh
 
 utilities = utilitiesCMG.util()
 
 ## safe batch mode
-import sys
-
 args = sys.argv[:]
 sys.argv = ["-b"]
-import ROOT
 
 sys.argv = args
 ROOT.gROOT.SetBatch(True)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
         "-i",
         "--indir",
         default=None,
-        help="Directory containing the smoothed scale factors"
+        help="Directory containing the smoothed scale factors",
     )
     parser.add_argument(
         "outdir", type=str, nargs=1, help="output directory to save things"
@@ -196,10 +196,10 @@ if __name__ == "__main__":
         help="Charge for veto SF",
     )
     parser.add_argument(
-        "--era", 
+        "--era",
         type=str,
         default="2016PostVFP",
-        choices=["2016PostVFP", "2017", "2018"]
+        choices=["2016PostVFP", "2017", "2018"],
     )
 
     args = parser.parse_args()
@@ -213,13 +213,12 @@ if __name__ == "__main__":
     vetoType = args.vetoType
 
     if args.indir is None:
-        if args.era=="2016PostVFP":
+        if args.era == "2016PostVFP":
             inputfolder = f"{data_dir}/muonSF/veto_{vetoType}_SF/"
         else:
             inputfolder = f"{data_dir}/muonSF/{args.era}/veto_{vetoType}_SF/"
     else:
         inputfolder = args.indir
-
 
     outdir_original = f"{args.outdir[0]}/{vetoType}_{charge}/"
     addStringToEnd(outdir_original, "/", notAddIfEndswithMatch=True)
@@ -441,7 +440,7 @@ if __name__ == "__main__":
         resultDict[f"vetoSF_{vetoType}_{step}_{charge}"] = vetoprodSF[step]
         resultDict[f"antiVetoSF_{vetoType}_{step}_{charge}"] = antivetoprodSF[step]
     resultDict.update(
-        {"meta_info": narf.ioutils.make_meta_info_dict(args=args, wd=common.base_dir)}
+        {"meta_info": wums.ioutils.make_meta_info_dict(args=args, wd=common.base_dir)}
     )
 
     outfile = f"{outdir}/allVetoSF_{vetoType}_{charge}.pkl.lz4"

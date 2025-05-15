@@ -22,14 +22,14 @@ dataDictV9 = {
         "filepaths": [
             "{BASE_PATH}/DYJetsToMuMu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_ZmmPostVFP,
+        "xsec": common.xsec_DYJetsToMuMu,
         "group": "Zmumu",
     },
     "DYJetsToMuMuMass10to50PostVFP": {
         "filepaths": [
             "{BASE_PATH}/DYJetsToMuMu_M-10to50_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_ZmmMass10to50PostVFP,
+        "xsec": common.xsec_DYJetsToMuMuMass10to50,
         "group": "DYlowMass",
     },
     "ZtautauPostVFP": {
@@ -37,35 +37,35 @@ dataDictV9 = {
             "{BASE_PATH}/DYJetsToTauTau_M-50_AtLeastOneEorMuDecay_H2ErratumFix_PDF_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
         # At least one tau->e or mu decay, so everything that's not all other decays
-        "xsec": common.xsec_ZmmPostVFP * common.Z_TAU_TO_LEP_RATIO,
+        "xsec": common.xsec_DYJetsToMuMu * common.Z_TAU_TO_LEP_RATIO,
         "group": "Ztautau",
     },
     "WplusmunuPostVFP": {
         "filepaths": [
             "{BASE_PATH}/WplusJetsToMuNu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_WpmunuPostVFP,
+        "xsec": common.xsec_WplusJetsToMuNu,
         "group": "Wmunu",
     },
     "WminusmunuPostVFP": {
         "filepaths": [
             "{BASE_PATH}/WminusJetsToMuNu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_WmmunuPostVFP,
+        "xsec": common.xsec_WminusJetsToMuNu,
         "group": "Wmunu",
     },
     "WplustaunuPostVFP": {
         "filepaths": [
             "{BASE_PATH}/WplusJetsToTauNu_TauToMu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
-        "xsec": common.BR_TAUToMU * common.xsec_WpmunuPostVFP,
+        "xsec": common.BR_TAUToMU * common.xsec_WplusJetsToMuNu,
         "group": "Wtaunu",
     },
     "WminustaunuPostVFP": {
         "filepaths": [
             "{BASE_PATH}/WminusJetsToTauNu_TauToMu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MCPostVFP_{NANO_PROD_TAG}",
         ],
-        "xsec": common.BR_TAUToMU * common.xsec_WmmunuPostVFP,
+        "xsec": common.BR_TAUToMU * common.xsec_WminusJetsToMuNu,
         "group": "Wtaunu",
     },
     "TTLeptonicPostVFP": {

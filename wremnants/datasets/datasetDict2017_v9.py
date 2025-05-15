@@ -7,12 +7,44 @@ lumijson = f"{common.data_dir}/Cert_294927-306462_13TeV_UL2017_Collisions17_HLT_
 # BASE_PATH is /scratchnvme/wmass/NANOV9/postVFP (so 2017 BASE path is {BASE_PATH}/../y2017v6/) have to update at some point
 # ZtautauPostVFP sample is one available from centrl production, so
 dataDictV9_2017 = {
-    "dataPostVFP": {
+    "data2017B": {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/SingleMuon/NanoV9Run2017B_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2017C": {
+        "filepaths": [
             "{BASE_PATH}/../y2017v6/SingleMuon/NanoV9Run2017C_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2017D": {
+        "filepaths": [
             "{BASE_PATH}/../y2017v6/SingleMuon/NanoV9Run2017D_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2017E": {
+        "filepaths": [
             "{BASE_PATH}/../y2017v6/SingleMuon/NanoV9Run2017E_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2017F": {
+        "filepaths": [
             "{BASE_PATH}/../y2017v6/SingleMuon/NanoV9Run2017F_{NANO_PROD_TAG}",
         ],
         "group": "Data",
@@ -24,7 +56,7 @@ dataDictV9_2017 = {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/DYJetsToMuMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}"
         ],
-        "xsec": common.xsec_ZmmPostVFP,
+        "xsec": common.xsec_DYJetsToMuMu,
         "group": "Zmumu",
         "das_name": "private",
     },
@@ -32,7 +64,7 @@ dataDictV9_2017 = {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/DYJetsToMuMu_M-10to50_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}"
         ],
-        "xsec": common.xsec_ZmmMass10to50PostVFP,
+        "xsec": common.xsec_DYJetsToMuMuMass10to50,
         "group": "DYlowMass",
         "das_name": "/DYJetsToMuMu_M-10to50_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/RunIISummer20UL18NanoAODv9-106X_upgrade2017_realistic_v16_L1v1*v1/NANOAODSIM",
     },
@@ -41,7 +73,7 @@ dataDictV9_2017 = {
             "{BASE_PATH}/../y2017v6//DYJetsToTauTau_M-50_AtLeastOneEorMuDecay_massWgtFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}"
         ],
         # At least one tau->e or mu decay, so everything that's not all other decays
-        "xsec": common.xsec_ZmmPostVFP * common.Z_TAU_TO_LEP_RATIO,
+        "xsec": common.xsec_DYJetsToMuMu * common.Z_TAU_TO_LEP_RATIO,
         "group": "Ztautau",
         "das_name": "/DYJetsToTauTau_M-50_AtLeastOneEorMuDecay_massWgtFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/RunIISummer20UL18NanoAODv9-106X_upgrade2017_realistic_v16_L1v1-v2/NANOAODSIM",
     },
@@ -49,7 +81,7 @@ dataDictV9_2017 = {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}"
         ],
-        "xsec": common.xsec_WpmunuPostVFP,
+        "xsec": common.xsec_WplusJetsToMuNu,
         "group": "Wmunu",
         "das_name": "private",
     },
@@ -57,7 +89,7 @@ dataDictV9_2017 = {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/WminusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}"
         ],
-        "xsec": common.xsec_WmmunuPostVFP,
+        "xsec": common.xsec_WminusJetsToMuNu,
         "group": "Wmunu",
         "das_name": "private",
     },
@@ -65,7 +97,7 @@ dataDictV9_2017 = {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/WplusJetsToTauNu_TauToMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}",
         ],
-        "xsec": common.BR_TAUToMU * common.xsec_WpmunuPostVFP,
+        "xsec": common.BR_TAUToMU * common.xsec_WplusJetsToMuNu,
         "group": "Wtaunu",
         "das_name": "private",
     },
@@ -73,7 +105,7 @@ dataDictV9_2017 = {
         "filepaths": [
             "{BASE_PATH}/../y2017v6/WminusJetsToTauNu_TauToMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2017_{NANO_PROD_TAG}"
         ],
-        "xsec": common.BR_TAUToMU * common.xsec_WmmunuPostVFP,
+        "xsec": common.BR_TAUToMU * common.xsec_WminusJetsToMuNu,
         "group": "Wtaunu",
         "das_name": "private",
     },

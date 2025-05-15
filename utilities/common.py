@@ -10,11 +10,11 @@ data_dir = f"{pathlib.Path(__file__).parent}/../wremnants-data/data/"
 
 BR_TAUToMU = 0.1739
 BR_TAUToE = 0.1782
-# cross sections in pb
-xsec_ZmmPostVFP = 2001.9
-xsec_WpmunuPostVFP = 11765.9
-xsec_WmmunuPostVFP = 8703.87
-xsec_ZmmMass10to50PostVFP = 6997.0
+# cross sections in pb at sqrt(s)=13Tev
+xsec_DYJetsToMuMu = 2001.9
+xsec_WplusJetsToMuNu = 11765.9
+xsec_WminusJetsToMuNu = 8703.87
+xsec_DYJetsToMuMuMass10to50 = 6997.0
 Z_TAU_TO_LEP_RATIO = 1.0 - (1.0 - BR_TAUToMU - BR_TAUToE) ** 2
 
 wprocs = [
@@ -40,6 +40,8 @@ wprocs = [
     "Wminusmunu_winhac-lo-photos",
     "Wminusmunu_winhac-lo",
     "Wminusmunu_winhac-nlo",
+    "WplusCharmToMuNu",
+    "WminusCharmToMuNu",
 ]
 zprocs = [
     "ZmumuPostVFP",

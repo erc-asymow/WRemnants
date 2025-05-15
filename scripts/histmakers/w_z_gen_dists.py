@@ -4,9 +4,7 @@ import hist
 import numpy as np
 
 import narf
-from utilities import boostHistHelpers as hh
-from utilities import common, differential, logging, parsing
-from utilities.io_tools import output_tools
+from utilities import common, differential, parsing
 from wremnants import (
     helicity_utils,
     syst_tools,
@@ -16,6 +14,9 @@ from wremnants import (
 )
 from wremnants.datasets.datagroups import Datagroups
 from wremnants.datasets.dataset_tools import getDatasets
+from wremnants.histmaker_tools import write_analysis_output
+from wums import boostHistHelpers as hh
+from wums import logging
 
 analysis_label = Datagroups.analysisLabel(os.path.basename(__file__))
 parser, initargs = parsing.common_parser(analysis_label)
@@ -76,6 +77,14 @@ parser.add_argument(
 parser.add_argument(
     "--theoryCorrections", action="store_true", help="Apply default theory corrections"
 )
+parser.add_argument(
+    "--addHelicityAxis", action="store_true", help="Add helicity to nominal axes"
+)
+parser.add_argument(
+    "--addCharmAxis",
+    action="store_true",
+    help="Add axis to store info if the event has an outgoing charm quark",
+)
 
 parser = parsing.set_parser_default(parser, "filterProcs", common.vprocs)
 args = parser.parse_args()
@@ -117,8 +126,12 @@ axis_chargeZgen = hist.axis.Integer(
     0, 1, name="chargeVgen", underflow=False, overflow=False
 )
 
-axis_absetal_gen = hist.axis.Regular(24, 0, 2.4, name="abseta")
-axis_ptl_gen = hist.axis.Regular(34, 26.0, 60.0, name="pt")
+
+axis_absetal_gen = hist.axis.Regular(24, 0, 2.4, name="absEtaGen")
+axis_ptl_gen = hist.axis.Regular(34, 26.0, 60.0, name="ptGen")
+axis_chargel_gen = hist.axis.Regular(
+    2, -2.0, 2.0, underflow=False, overflow=False, name=f"qGen"
+)
 
 theory_corrs = [*args.theoryCorr, *args.ewTheoryCorr]
 corr_helpers = theory_corrections.load_corr_helpers(common.vprocs, theory_corrs)
@@ -141,9 +154,15 @@ def build_graph(df, dataset):
         "Z",
     ]  # in common.zprocs
 
-    axis_massWgen = hist.axis.Variable(
-        [4.0, 13000.0], name="massVgen", underflow=True, overflow=False
-    )
+    if args.addCharmAxis:
+        axis_massWgen = hist.axis.Variable(
+            [4.0, 13000.0], name="massVgen", underflow=True, overflow=False
+        )
+    else:
+        axis_massWgen = hist.axis.Regular(
+            120, 0, 120.0, name="massVgen", underflow=True, overflow=True
+        )
+
     axis_massZgen = hist.axis.Regular(12, 60.0, 120.0, name="massVgen")
 
     theoryAgnostic_axes, _ = differential.get_theoryAgnostic_axes(
@@ -241,7 +260,6 @@ def build_graph(df, dataset):
             axis_ptqVgen if args.ptqVgen else axis_ptVgen,
             axis_chargeZgen,
         ]
-        lep_axes = [axis_absetal_gen, axis_ptl_gen, axis_chargeZgen]
     else:
         nominal_axes = [
             axis_massWgen,
@@ -249,7 +267,6 @@ def build_graph(df, dataset):
             axis_ptqVgen if args.ptqVgen else axis_ptVgen,
             axis_chargeWgen,
         ]
-        lep_axes = [axis_absetal_gen, axis_ptl_gen, axis_chargeWgen]
 
     nominal_cols = [
         "massVgen",
@@ -257,14 +274,44 @@ def build_graph(df, dataset):
         "ptqVgen" if args.ptqVgen else "ptVgen",
         "chargeVgen",
     ]
-    lep_cols = ["absEtaGen", "ptGen", "chargeVgen"]
+
+    if args.addCharmAxis:
+        axis_charm = hist.axis.Regular(
+            2, -0.5, 1.5, underflow=False, overflow=False, name="charm"
+        )
+        nominal_axes = [*nominal_axes, axis_charm]
+        nominal_cols = [*nominal_cols, "charm"]
+
+        df = df.Define(
+            "charm",
+            "Sum(abs(LHEPart_pdgId[LHEPart_status==1])==4) == 1 && Sum(abs(LHEPart_pdgId[LHEPart_status==1])==5) != 1",
+        )
+
+    if args.addHelicityAxis:
+        # add helicity axis, indices, and weights
+
+        # make a new axis here to avoid name collision with histograms which otherwise already
+        # have a helicity axis
+        axis_helicitygen = hist.axis.Integer(
+            -1, 8, name="helicity", overflow=False, underflow=False
+        )
+
+        # since mutliple tensor weights are not currently supported, convert the helicity tensor to a std::array which
+        # will be looped over during the filling (together with the helicity indices)
+        df = df.DefinePerSample("helicity_idxs", "wrem::seq_idxs_array<9>(-1)")
+        df = df.Define(
+            "helicity_moments",
+            "wrem::tensor_to_array(wrem::csAngularMoments(csSineCosThetaPhigen))",
+        )
+
+        nominal_axes += [axis_helicitygen]
+        nominal_cols += ["helicity_idxs", "helicity_moments"]
 
     mode = f'{"z" if isZ else "w"}_{analysis_label}'
     if args.fiducial is not None:
         if isZ and args.fiducial == "singlelep":
             mode += "_wlike"
 
-        df = unfolding_tools.define_gen_level(df, "preFSR", dataset.name, mode=mode)
         df = unfolding_tools.select_fiducial_space(
             df,
             mode=mode,
@@ -274,9 +321,20 @@ def build_graph(df, dataset):
         )
 
     if args.singleLeptonHists and (isW or isZ):
+        df = unfolding_tools.define_gen_level(
+            df, dataset.name, ["prefsr"], mode="w_mass" if isW else "z_wlike"
+        )
+
+        lep_cols = ["prefsrLep_absEta", "prefsrLep_pt", "prefsrLep_charge"]
+        lep_axes = [axis_absetal_gen, axis_ptl_gen, axis_chargel_gen]
+
+        if args.addCharmAxis:
+            lep_axes = [*lep_axes, axis_charm]
+            lep_cols = [*lep_cols, "charm"]
+
         results.append(
             df.HistoBoost(
-                "nominal_genlep",
+                "prefsr_lep",
                 lep_axes,
                 [*lep_cols, "nominal_weight"],
                 storage=hist.storage.Weight(),
@@ -773,7 +831,6 @@ def build_graph(df, dataset):
         and "winhac" not in dataset.name
         and "LHEScaleWeight" in df.GetColumnNames()
         and "LHEPdfWeight" in df.GetColumnNames()
-        and "MEParamWeight" in df.GetColumnNames()
     ):
 
         qcdScaleByHelicity_helper = (
@@ -796,18 +853,24 @@ def build_graph(df, dataset):
             base_name="nominal_gen",
             propagateToHelicity=args.propagatePDFstoHelicity,
         )
+
+        helicity_axes = nominal_axes[:-1] if args.addHelicityAxis else nominal_axes
+        helicity_cols = nominal_cols[:-2] if args.addHelicityAxis else nominal_cols
+
+        if args.addCharmAxis:
+            helicity_axes = helicity_axes[:-1]
+            helicity_cols = helicity_cols[:-1]
+
         df = syst_tools.add_helicity_hists(
             results,
             df,
             dataset.name,
-            nominal_axes,
-            nominal_cols,
+            helicity_axes,
+            helicity_cols,
             base_name="nominal_gen",
             storage=hist.storage.Weight(),
         )
 
-    nominal_cols = [col_rapidity, "ptqVgen" if args.ptqVgen else "ptVgen"]
-    nominal_axes = [axis_rapidity, axis_ptqVgen if args.ptqVgen else axis_ptVgen]
     nominal_gen = df.HistoBoost(
         "nominal_gen",
         nominal_axes,
@@ -821,11 +884,13 @@ def build_graph(df, dataset):
 
 
 resultdict = narf.build_and_run(datasets, build_graph)
-output_tools.write_analysis_output(
+write_analysis_output(
     resultdict, f"{os.path.basename(__file__).replace('py', 'hdf5')}", args
 )
 
-if not args.skipHelicityXsecs:
+# FIXME currently the addHelicityAxis functionality interferes with the prouduction
+# of these histograms, so skip them in that case
+if not args.addHelicityAxis and not args.skipHelicityXsecs:
     logger.info("Writing out helicity cross sections")
     z_helicity_xsecs = None
     w_helicity_xsecs = None
@@ -883,4 +948,4 @@ if not args.skipHelicityXsecs:
         if args.useTheoryAgnosticBinning:
             outfname += "_theoryAgnosticBinning"
         outfname += ".hdf5"
-        output_tools.write_analysis_output(helicity_xsecs_out, outfname, args)
+        write_analysis_output(helicity_xsecs_out, outfname, args)

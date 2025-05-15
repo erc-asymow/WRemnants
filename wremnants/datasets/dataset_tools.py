@@ -5,7 +5,6 @@ import ROOT
 import XRootD.client
 
 import narf
-from utilities import logging
 from wremnants.datasets.datasetDict2017_v9 import dataDictV9_2017
 from wremnants.datasets.datasetDict2018_v9 import dataDictV9_2018
 from wremnants.datasets.datasetDict_gen import genDataDict
@@ -14,6 +13,7 @@ from wremnants.datasets.datasetDict_lowPU2023 import dataDictLowPU2023
 
 # set the debug level for logging incase of full printout
 from wremnants.datasets.datasetDict_v9 import dataDictV9, dataDictV9extended
+from wums import logging
 
 logger = logging.child_logger(__name__)
 
@@ -232,7 +232,6 @@ def getDatasets(
     oneMCfileEveryN=None,
     checkFileForZombie=False,
     era="2016PostVFP",
-    eraDataSel=None, #select specific eras for data
     extended=True,
 ):
 
@@ -282,12 +281,11 @@ def getDatasets(
             continue
 
         if sample in genDataDict:
-            base_path = base_path.replace("NanoAOD", "NanoGen")
+            base_path_sample = base_path.replace("NanoAOD", "NanoGen")
+        else:
+            base_path_sample = base_path
 
         is_data = info.get("group", "") == "Data"
-
-        if is_data and eraDataSel:
-            info["filepaths"] = [f for f in info["filepaths"] if any(f"Run{era}{e_sel}" in f for e_sel in eraDataSel)]
 
         prod_tags = data_tags if is_data else mc_tags
         nfiles = maxFiles
@@ -296,7 +294,7 @@ def getDatasets(
         paths = makeFilelist(
             info["filepaths"],
             nfiles,
-            base_path=base_path,
+            base_path=base_path_sample,
             nano_prod_tags=prod_tags,
             is_data=is_data,
             oneMCfileEveryN=oneMCfileEveryN,

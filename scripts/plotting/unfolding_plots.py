@@ -1,11 +1,12 @@
 import mplhep as hep
 import numpy as np
 
-from utilities import boostHistHelpers as hh
-from utilities import logging, parsing
-from utilities.io_tools import combinetf_input, output_tools
+import combinetf2.io_tools
+from utilities import parsing
 from wremnants import plot_tools
 from wremnants.datasets.datagroups import Datagroups
+from wums import boostHistHelpers as hh
+from wums import logging, output_tools
 
 hep.style.use(hep.style.ROOT)
 
@@ -62,7 +63,7 @@ logger = logging.setup_logger(__file__, args.verbose, args.noColorLogger)
 
 outdir = output_tools.make_plot_dir(args.outpath, args.outfolder, eoscp=args.eoscp)
 
-fitresult = combinetf_input.get_fitresult(args.fitresult)
+fitresult = combinetf2.io_tools.get_fitresult(args.fitresult)
 
 datagroups = Datagroups(args.infile)
 isW = datagroups.mode[0] == "w"
@@ -205,9 +206,10 @@ def plot(
             ylabel = yLabel.replace("[pb]", "[pb/GeV]")
 
     if ratio:
-        fig, ax1, ax2 = plot_tools.figureWithRatio(
+        fig, ax1, ratio_axes = plot_tools.figureWithRatio(
             hist_data, "Bin number", ylabel, ylim, "Data/Pred.", rrange
         )
+        ax2 = ratio_axes[-1]
     else:
         fig, ax1 = plot_tools.figure(hist_data, "Bin number", ylabel, ylim)
 

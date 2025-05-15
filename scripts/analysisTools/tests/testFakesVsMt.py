@@ -19,11 +19,11 @@ import hist
 import numpy as np
 
 import narf
-import narf.fitutils
-from utilities import boostHistHelpers as hh
-from utilities import logging
+import wums.fitutils
 from wremnants import legacy_functions as sel
 from wremnants.datasets.datagroups import Datagroups
+from wums import boostHistHelpers as hh
+from wums import logging
 
 args = sys.argv[:]
 sys.argv = ["-b"]
@@ -332,7 +332,7 @@ def drawAndFitFRF(
             degree=fitPolDegree,
         )
 
-    fitres_tf1 = narf.fitutils.fit_hist(boost_hist, polN_scaled_global, params)
+    fitres_tf1 = wums.fitutils.fit_hist(boost_hist, polN_scaled_global, params)
     f1 = ROOT.TF1("f1", polN_scaled_global, xMinFit, xMaxFit, len(params))
     status = fitres_tf1["status"]
     covstatus = fitres_tf1["covstatus"]
@@ -369,7 +369,7 @@ def drawAndFitFRF(
             pol0_scaled_global = partial(
                 polN_root_, xLowVal=xMinFit, xFitRange=xMaxFit - xMinFit, degree=0
             )
-        fitres_tf1_pol0 = narf.fitutils.fit_hist(
+        fitres_tf1_pol0 = wums.fitutils.fit_hist(
             boost_hist, pol0_scaled_global, params0
         )
         fpol0 = ROOT.TF1("fpol0", pol0_scaled_global, xMinFit, xMaxFit, len(params0))

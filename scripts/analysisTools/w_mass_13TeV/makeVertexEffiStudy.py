@@ -18,10 +18,10 @@ import sys
 import hist
 
 import narf
+from wremnants.datasets.datagroups import Datagroups
 
 # from wremnants import plot_tools,theory_tools,syst_tools
-from utilities import logging
-from wremnants.datasets.datagroups import Datagroups
+from wums import logging
 
 args = sys.argv[:]
 sys.argv = ["-b"]
@@ -153,13 +153,27 @@ if __name__ == "__main__":
             )
             if eta == 0.0:
                 etaBinLegEntry[-1] = "|^{ }#eta^{#mu }| < %s" % round(etaUp, 1)
-            h = hin[
-                {
-                    "abseta": s[complex(0, eta) : complex(0, nAbsEtaBins) : hist.sum],
-                    "passIso": True,
-                    "passMT": True,
-                }
-            ]
+            # backward compatibility
+            if "abseta" in hin.axes.name:
+                h = hin[
+                    {
+                        "abseta": s[
+                            complex(0, eta) : complex(0, nAbsEtaBins) : hist.sum
+                        ],
+                        "passIso": True,
+                        "passMT": True,
+                    }
+                ]
+            else:
+                h = hin[
+                    {
+                        "abeta": s[
+                            complex(0, eta) : complex(0, nAbsEtaBins) : hist.sum
+                        ],
+                        "passIso": True,
+                        "passMT": True,
+                    }
+                ]
             if not args.Zdilepton:
                 if args.process == "ZmumuPostVFP":
                     # require second gen lepton out of acceptance to mimic W, otherwise one would have had 2 reco leptons modulo selection efficiency

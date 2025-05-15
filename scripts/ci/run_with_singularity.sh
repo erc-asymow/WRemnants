@@ -3,12 +3,19 @@ export APPTAINER_BIND="/scratch,/cvmfs"
 if [[ -d $WREM_BASE ]]; then
     export APPTAINER_BIND="${APPTAINER_BIND},${WREM_BASE}/.."
 fi
-CONTAINER=/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/bendavid/cmswmassdocker/wmassdevrolling\:v38
+CONTAINER=/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/bendavid/cmswmassdocker/wmassdevrolling\:v44
+
+# Kerberos cache setup
+# Assuming kinit was already done on the host!
+KRB5CC_HOST_DIR="/run/user/$UID/krb5ccdir"
+KRB5CC_CONTAINER_DIR="/tmp/krb5ccdir"
 
 # Ensure kerberos permissions for eos access (requires systemd kerberos setup)
-if [ -d $XDG_RUNTIME_DIR/krb5cc ]; then
-    export KRB5CCNAME=/tmp/krb5cc_$UID 
-    export APPTAINER_BIND="$APPTAINER_BIND,$XDG_RUNTIME_DIR/krb5cc:/tmp/krb5cc_$UID"
+if [[ -d "$KRB5CC_HOST_DIR" ]]; then
+    export APPTAINER_BIND="${APPTAINER_BIND},${KRB5CC_HOST_DIR}:${KRB5CC_CONTAINER_DIR}"
+    export KRB5CCNAME="DIR:${KRB5CC_CONTAINER_DIR}"
+else
+    echo "⚠️ Warning: Kerberos cache directory $KRB5CC_HOST_DIR does not exist!"
 fi
 
 singularity run $CONTAINER $@

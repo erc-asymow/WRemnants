@@ -1,4 +1,8 @@
-from utilities.common import xsec_WmmunuPostVFP, xsec_WpmunuPostVFP, xsec_ZmmPostVFP
+from utilities.common import (
+    xsec_DYJetsToMuMu,
+    xsec_WminusJetsToMuNu,
+    xsec_WplusJetsToMuNu,
+)
 
 # winhac cross sections from: https://gitlab.cern.ch/cms-wmass/private/issue-tracking/-/issues/34#note_7052239
 xsec_winhac_WplusToMuNu_LO = 10104.50380
@@ -12,6 +16,10 @@ xsec_powheg_WplusToMuNu_LO = 11690.260441335342
 xsec_powheg_WplusToMuNu_NLOEW = 11657.708788022124
 xsec_powheg_WminusToMuNu_LO = 8687.5312426956061
 xsec_powheg_WminusToMuNu_NLOEW = 8664.1686115643297
+
+# from https://gitlab.cern.ch/cms-wmass/private/issue-tracking/-/issues/109#note_8972785
+xsec_WplusCharmToMuNu = 1607.3778900941979  # +- 4.9247228837888333
+xsec_WminusCharmToMuNu = 1749.9768825908691  # +- 6.4490475901643940
 
 horace_v1 = False
 horace_v2 = False
@@ -86,7 +94,7 @@ genDataDict = {
         "filepaths": [
             "{BASE_PATH}/DYJetsToMuMu_H2ErratumFix_NoQEDISR_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos"
         ],
-        "xsec": xsec_ZmmPostVFP,
+        "xsec": xsec_DYJetsToMuMu,
         "group": "Zmumu",
     },
     "Wplusmunu_horace-lo-photos": {
@@ -141,7 +149,14 @@ genDataDict = {
         "filepaths": [
             "{BASE_PATH}/WplusJetsToMuNu_H2ErratumFix_NoQEDISR_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos"
         ],
-        "xsec": xsec_WpmunuPostVFP,
+        "xsec": xsec_WplusJetsToMuNu,
+        "group": "Wmunu",
+    },
+    "WplusCharmToMuNu": {
+        "filepaths": [
+            "{BASE_PATH}/WplusCharmToMuNu_TuneCP5_13TeV-powheg-pythia8-photos"
+        ],
+        "xsec": xsec_WplusCharmToMuNu,
         "group": "Wmunu",
     },
     "Wminusmunu_horace-lo-photos": {
@@ -200,7 +215,14 @@ genDataDict = {
         "filepaths": [
             "{BASE_PATH}/WminusJetsToMuNu_H2ErratumFix_NoQEDISR_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos"
         ],
-        "xsec": xsec_WmmunuPostVFP,
+        "xsec": xsec_WminusJetsToMuNu,
+        "group": "Wmunu",
+    },
+    "WminusCharmToMuNu": {
+        "filepaths": [
+            "{BASE_PATH}/WminusCharmToMuNu_TuneCP5_13TeV-powheg-pythia8-photos"
+        ],
+        "xsec": xsec_WminusCharmToMuNu,
         "group": "Wmunu",
     },
 }
@@ -261,21 +283,21 @@ if horace_v1:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v1/ZToMuMu_TuneCP5_13TeV-horace-alpha-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v1-born-fsr-photos-isr-pythia": {
                 "filepaths": [
                     "{BASE_PATH}/Horace_v1/ZToMuMu_TuneCP5_13TeV-horace-born-fsr-photos-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v1-born-fsr-photoslow-isr-pythia": {
                 "filepaths": [
                     "{BASE_PATH}/Horace_v1/ZToMuMu_TuneCP5_13TeV-horace-born-fsr-photoslow-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v1-lo-photos": {
@@ -289,7 +311,7 @@ if horace_v1:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v1/ZToMuMu_TuneCP5_13TeV-horace-born-fsr-pythia-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v1-nlo": {
@@ -303,7 +325,7 @@ if horace_v1:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v1/ZToMuMu_TuneCP5_13TeV-horace-exp-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
         }
@@ -330,7 +352,7 @@ if horace_v2:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v2/ZToMuMu_TuneCP5_13TeV-horace-exp-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
         }
@@ -350,7 +372,7 @@ if horace_v3:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v3/ZToMuMu_TuneCP5_13TeV-horace-exp-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v3-nlo": {
@@ -371,7 +393,7 @@ if horace_v3:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v3/WplusToMuNu_TuneCP5_13TeV-horace-exp-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_WpmunuPostVFP,
+                "xsec": xsec_WplusJetsToMuNu,
                 "group": "Wmunu",
             },
             "Wplusmunu_horace-v3-nlo": {
@@ -392,7 +414,7 @@ if horace_v3:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v3/WminusToMuNu_TuneCP5_13TeV-horace-exp-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_WmmunuPostVFP,
+                "xsec": xsec_WminusJetsToMuNu,
                 "group": "Wmunu",
             },
             "Wminusmunu_horace-v3-nlo": {
@@ -412,21 +434,21 @@ if horace_v5:
                 "filepaths": [
                     "{BASE_PATH}/Horace_v5/ZToMuMu_TuneCP5_13TeV-horace-alpha-fsr-off-isr-off"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v5-alpha-old-fsr-off-isr-off": {
                 "filepaths": [
                     "{BASE_PATH}/Horace_v5/ZToMuMu_TuneCP5_13TeV-horace-alpha-old-fsr-off-isr-off"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v5-alpha-old-fsr-off-isr-pythia": {
                 "filepaths": [
                     "{BASE_PATH}/Horace_v5/ZToMuMu_TuneCP5_13TeV-horace-alpha-old-fsr-off-isr-pythia"
                 ],
-                "xsec": xsec_ZmmPostVFP,
+                "xsec": xsec_DYJetsToMuMu,
                 "group": "Zmumu",
             },
             "Zmumu_horace-v5-nlo": {

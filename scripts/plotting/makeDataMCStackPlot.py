@@ -1,14 +1,14 @@
 import hist
 from matplotlib import colormaps
 
-from utilities import boostHistHelpers as hh
-from utilities import logging, parsing
-from utilities.io_tools import output_tools
+from utilities import parsing
 from utilities.styles import styles
-from wremnants import plot_tools, syst_tools
+from wremnants import syst_tools
 from wremnants.datasets.datagroups import Datagroups
 from wremnants.histselections import FakeSelectorSimpleABCD
 from wremnants.regression import Regressor
+from wums import boostHistHelpers as hh
+from wums import logging, output_tools, plot_tools
 
 parser = parsing.plot_parser()
 parser.add_argument(
@@ -88,16 +88,6 @@ parser.add_argument(
     choices=["show", "sum", "hint", "none"],
     default="none",
     help="Whether plot the under/overflow bin",
-)
-parser.add_argument(
-    "--fitresult",
-    type=str,
-    help="Specify a fitresult root file to draw the postfit distributions with uncertainty bands",
-)
-parser.add_argument(
-    "--prefit",
-    action="store_true",
-    help="Use the prefit uncertainty from the fitresult root file, instead of the postfit. (--fitresult has to be given)",
 )
 parser.add_argument(
     "--noRatioErr",
@@ -187,6 +177,13 @@ parser.add_argument(
     default=[],
     help="Scale a variation by this factor",
 )
+parser.add_argument(
+    "--extraTextLoc",
+    type=float,
+    nargs=2,
+    default=(0.05, 0.8),
+    help="Location in (x,y) for additional text, aligned to upper left",
+)
 subparsers = parser.add_subparsers(dest="variation")
 variation = subparsers.add_parser(
     "variation", help="Arguments for adding variation hists"
@@ -244,11 +241,6 @@ def padArray(ref, matchLength):
 
 
 addVariation = hasattr(args, "varName") and args.varName is not None
-
-if args.fitresult and len(args.hists) > 1:
-    raise ValueError(
-        "Multiple hists not supported for combine-based pre/post-fit plotting"
-    )
 
 entries = []
 varLabels = args.varLabel if addVariation else []
@@ -456,7 +448,7 @@ if addVariation:
         unstack.append(varname)
 
 groups.sortByYields(args.baseName, nominalName=nominalName)
-histInfo = groups.getDatagroups()
+histInfo = groups.groups
 
 logger.info(f"Unstacked processes are {exclude}")
 prednames = list(
@@ -467,6 +459,17 @@ prednames = list(
     )
 )
 logger.info(f"Stacked processes are {prednames}")
+
+text_pieces = []
+if args.normToData:
+    text_pieces.append("Prefit" + " (normalized)")
+else:
+    text_pieces.append("Prefit")
+
+if args.channel != "all":
+    text_pieces.append(
+        r"$\mathit{q}^\mu$ = " + ("+1" if args.channel == "plus" else "-1")
+    )
 
 
 def collapseSyst(h):
@@ -514,16 +517,17 @@ for h in args.hists:
     else:
         rlabel = args.rlabel
 
-    if len(h.split("-")) > 1:
-        sp = h.split("-")
-        action = lambda x: hh.unrolledHist(
-            collapseSyst(x[select]), binwnorm=binwnorm, obs=sp
-        )
-        xlabel = f"({', '.join([styles.xlabels.get(s,s).replace('(GeV)','') for s in sp])}) bin"
+    sp = h.split("-")
+    xlabel = plot_tools.get_axis_label(styles, sp)
+    if len(sp) > 1:
+        base_action = lambda x: collapseSyst(x[select])
+        action = lambda x: hh.unrolledHist(base_action(x), binwnorm=binwnorm, obs=sp)
     else:
-        action = lambda x: hh.projectNoFlow(collapseSyst(x[select]), h, overflow_ax)
+        base_action = lambda x: hh.projectNoFlow(
+            collapseSyst(x[select]), h, overflow_ax
+        )
+        action = base_action
         href = h if h != "ptVgen" else ("ptWgen" if "Wmunu" in prednames else "ptZgen")
-        xlabel = styles.xlabels.get(href, href)
 
     if groups.flavor in ["e", "ee"]:
         xlabel = xlabel.replace(r"\mu", "e")
@@ -542,8 +546,6 @@ for h in args.hists:
         scaleRatioUnstacked=args.scaleRatioUnstacked,
         action=action,
         unstacked=unstack,
-        fitresult=args.fitresult,
-        prefit=args.prefit,
         xlabel=xlabel,
         ylabel=ylabel,
         rrange=args.rrange,
@@ -555,6 +557,8 @@ for h in args.hists:
         no_fill=args.noFill,
         no_stack=args.noStack,
         no_ratio=args.noRatio,
+        extra_text=text_pieces,
+        extra_text_loc=args.extraTextLoc,
         density=args.density,
         flow=args.flow,
         cms_decor=args.cmsDecor,
@@ -568,8 +572,10 @@ for h in args.hists:
         logoPos=args.logoPos,
         width_scale=1.25 if len(h.split("-")) == 1 else 1,
         legPos=args.legPos,
+        leg_padding=args.legPadding,
         lowerLegCols=args.lowerLegCols,
         lowerLegPos=args.lowerLegPos,
+        lower_leg_padding=args.lowerLegPadding,
         subplotsizes=args.subplotSizes,
     )
 
@@ -583,8 +589,6 @@ for h in args.hists:
                 else (var_arg + args.selectEntries[0])
             )
         to_join.append(var_arg)
-    if args.fitresult:
-        to_join.append("prefit" if args.prefit else "postfit")
     to_join.extend([args.postfix, args.channel.replace("all", "")])
     outfile = "_".join(filter(lambda x: x, to_join))
     if args.cmsDecor == "Preliminary":
@@ -592,24 +596,20 @@ for h in args.hists:
 
     plot_tools.save_pdf_and_png(outdir, outfile)
 
-    # The action has already been applied to the underlying hist in this case
-    if args.fitresult:
-        action = lambda x: x
-
     stack_yields = groups.make_yields_df(
-        args.baseName, prednames, norm_proc="Data", action=action
+        args.baseName, prednames, norm_proc="Data", action=base_action
     )
     unstacked_yields = groups.make_yields_df(
-        args.baseName, unstack, norm_proc="Data", action=action
+        args.baseName, unstack, norm_proc="Data", action=base_action
     )
-    plot_tools.write_index_and_log(
+    output_tools.write_index_and_log(
         outdir,
         outfile,
-        yield_tables={
+        analysis_meta_info={
             "Stacked processes": stack_yields,
             "Unstacked processes": unstacked_yields,
+            "AnalysisOutput": groups.getMetaInfo(),
         },
-        analysis_meta_info={"AnalysisOutput": groups.getMetaInfo()},
         args=args,
     )
 

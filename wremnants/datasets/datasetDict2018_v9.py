@@ -7,11 +7,35 @@ lumijson = f"{common.data_dir}/Cert_314472-325175_13TeV_UL2018_Collisions18_HLT_
 # BASE_PATH is /scratchnvme/wmass/NANOV9/postVFP (so 2018 BASE path is {BASE_PATH}/../y2018v6/) have to update at some point
 # ZtautauPostVFP sample is one available from centrl production, so
 dataDictV9_2018 = {
-    "dataPostVFP": {
+    "data2018A": {
         "filepaths": [
             "{BASE_PATH}/../y2018v6/SingleMuon/NanoV9Run2018A_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2018B": {
+        "filepaths": [
             "{BASE_PATH}/../y2018v6/SingleMuon/NanoV9Run2018B_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2018C": {
+        "filepaths": [
             "{BASE_PATH}/../y2018v6/SingleMuon/NanoV9Run2018C_{NANO_PROD_TAG}",
+        ],
+        "group": "Data",
+        "lumicsv": lumicsv,
+        "lumijson": lumijson,
+        "das_name": "private",
+    },
+    "data2018D": {
+        "filepaths": [
             "{BASE_PATH}/../y2018v6/SingleMuon/NanoV9Run2018D_{NANO_PROD_TAG}",
         ],
         "group": "Data",
@@ -24,7 +48,7 @@ dataDictV9_2018 = {
             "{BASE_PATH}/../y2018v6/DYJetsToMuMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
             "{BASE_PATH}/../y2018v6/DYJetsToMuMu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_ZmmPostVFP,
+        "xsec": common.xsec_DYJetsToMuMu,
         "group": "Zmumu",
         "das_name": "private",
     },
@@ -32,7 +56,7 @@ dataDictV9_2018 = {
         "filepaths": [
             "{BASE_PATH}/../y2018v6/DYJetsToMuMu_M-10to50_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}"
         ],
-        "xsec": common.xsec_ZmmMass10to50PostVFP,
+        "xsec": common.xsec_DYJetsToMuMuMass10to50,
         "group": "DYlowMass",
         "das_name": "/DYJetsToMuMu_M-10to50_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1*v1/NANOAODSIM",
     },
@@ -41,7 +65,7 @@ dataDictV9_2018 = {
             "{BASE_PATH}/../y2018v6/DYJetsToTauTau_M-50_AtLeastOneEorMuDecay_H2ErratumFix_PDF_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}"
         ],
         # At least one tau->e or mu decay, so everything that's not all other decays
-        "xsec": common.xsec_ZmmPostVFP * common.Z_TAU_TO_LEP_RATIO,
+        "xsec": common.xsec_DYJetsToMuMu * common.Z_TAU_TO_LEP_RATIO,
         "group": "Ztautau",
         "das_name": "/DYJetsToTauTau_M-50_AtLeastOneEorMuDecay_H2ErratumFix_PDF_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM",
     },
@@ -50,7 +74,7 @@ dataDictV9_2018 = {
             "{BASE_PATH}/../y2018v6/WplusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
             "{BASE_PATH}/../y2018v6/WplusJetsToMuNu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_WpmunuPostVFP,
+        "xsec": common.xsec_WplusJetsToMuNu,
         "group": "Wmunu",
         "das_name": "private",
     },
@@ -59,7 +83,7 @@ dataDictV9_2018 = {
             "{BASE_PATH}/../y2018v6/WminusJetsToMuNu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
             "{BASE_PATH}/../y2018v6/WminusJetsToMuNu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
         ],
-        "xsec": common.xsec_WmmunuPostVFP,
+        "xsec": common.xsec_WminusJetsToMuNu,
         "group": "Wmunu",
         "das_name": "private",
     },
@@ -68,7 +92,7 @@ dataDictV9_2018 = {
             "{BASE_PATH}/../y2018v6/WplusJetsToTauNu_TauToMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
             "{BASE_PATH}/../y2018v6/WplusJetsToTauNu_TauToMu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
         ],
-        "xsec": common.BR_TAUToMU * common.xsec_WpmunuPostVFP,
+        "xsec": common.BR_TAUToMU * common.xsec_WplusJetsToMuNu,
         "group": "Wtaunu",
         "das_name": "private",
     },
@@ -77,7 +101,7 @@ dataDictV9_2018 = {
             "{BASE_PATH}/../y2018v6/WminusJetsToTauNu_TauToMu_H2ErratumFix_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
             "{BASE_PATH}/../y2018v6/WminusJetsToTauNu_TauToMu_H2ErratumFix_PDFExt_TuneCP5_13TeV-powhegMiNNLO-pythia8-photos/NanoV9MC2018_{NANO_PROD_TAG}",
         ],
-        "xsec": common.BR_TAUToMU * common.xsec_WmmunuPostVFP,
+        "xsec": common.BR_TAUToMU * common.xsec_WminusJetsToMuNu,
         "group": "Wtaunu",
         "das_name": "private",
     },

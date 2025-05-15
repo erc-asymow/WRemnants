@@ -1,10 +1,10 @@
 from copy import deepcopy
 
 import hist
-import numpy as np
 
-from utilities import common, logging
-from wremnants import syst_tools, theory_corrections, theory_tools, theoryAgnostic_tools
+from utilities import common
+from wremnants import syst_tools, theory_tools, theoryAgnostic_tools
+from wums import logging
 
 logger = logging.child_logger(__name__)
 
@@ -27,77 +27,74 @@ def add_out_of_acceptance(datasets, group, newGroupName=None):
     return datasets + datasets_ooa
 
 
-def define_gen_level(df, gen_level, dataset_name, mode="w_mass"):
+def define_gen_level(df, dataset_name, gen_levels=["prefsr", "postfsr"], mode="w_mass"):
     # gen level definitions
-    gen_levels = ["preFSR", "postFSR"]
-    if gen_level not in gen_levels:
+    known_levels = ["prefsr", "postfsr"]
+    if any(g not in known_levels for g in gen_levels):
         raise ValueError(
-            f"Unknown gen level '{gen_level}'! Supported gen level definitions are '{gen_levels}'."
+            f"Unknown gen level in '{gen_levels}'! Supported gen level definitions are '{known_levels}'."
         )
 
-    logger.info(f"Using {gen_level} leptons")
     singlelep = mode[0] == "w" or "wlike" in mode
 
-    if gen_level == "preFSR":
+    if "prefsr" in gen_levels:
         df = theory_tools.define_prefsr_vars(df)
 
-        # needed for fiducial phase space definition
-        df = df.Alias("massVGen", "massVgen")
-        df = df.Alias("ptVGen", "ptVgen")
-        df = df.Alias("absYVGen", "absYVgen")
-        df = df.Alias("chargeVGen", "chargeVgen")
+        # # needed for fiducial phase space definition
+        df = df.Alias("prefsrV_mass", "massVgen")
+        df = df.Alias("prefsrV_pt", "ptVgen")
+        df = df.Alias("prefsrV_absY", "absYVgen")
+        df = df.Alias("prefsrV_charge", "chargeVgen")
 
         if singlelep:
-            df = df.Alias("mTVGen", "mTVgen")
+            df = df.Alias("prefsrV_mT", "mTVgen")
 
         if mode[0] == "w":
-            df = df.Define("ptGen", "chargeVgen < 0 ? genl.pt() : genlanti.pt()")
+            df = df.Define("prefsrLep_pt", "chargeVgen < 0 ? genl.pt() : genlanti.pt()")
             df = df.Define(
-                "absEtaGen",
+                "prefsrLep_absEta",
                 "chargeVgen < 0 ? std::fabs(genl.eta()) : std::fabs(genlanti.eta())",
             )
+            df = df.Alias("prefsrLep_charge", "chargeVgen")
         else:
-            df = df.Define("ptGen", "event % 2 == 0 ? genl.pt() : genlanti.pt()")
+            df = df.Define("prefsrLep_pt", "event % 2 == 0 ? genl.pt() : genlanti.pt()")
             df = df.Define(
-                "absEtaGen",
+                "prefsrLep_absEta",
                 "event % 2 == 0 ? std::fabs(genl.eta()) : std::fabs(genlanti.eta())",
             )
-            df = df.Define("ptOtherGen", "event % 2 == 0 ? genlanti.pt() : genl.pt()")
             df = df.Define(
-                "absEtaOtherGen",
+                "prefsrOtherLep_pt", "event % 2 == 0 ? genlanti.pt() : genl.pt()"
+            )
+            df = df.Define(
+                "prefsrOtherLep_absEta",
                 "event % 2 == 0 ? std::fabs(genlanti.eta()) : std::fabs(genl.eta())",
             )
+            if "wlike" in mode:
+                df = df.Define("prefsrLep_charge", "event % 2 == 0 ? -1 : 1")
 
-    elif gen_level == "postFSR":
+    if "postfsr" in gen_levels:
         df = theory_tools.define_postfsr_vars(df, mode=mode)
 
-        df = df.Alias("ptGen", f"postfsrLep_pt")
-        df = df.Alias("absEtaGen", f"postfsrLep_absEta")
-
         if singlelep:
-            df = df.Alias("mTVGen", "postfsrMT")
+            df = df.Alias("postfsrV_mT", "postfsrMT")
 
         if mode[0] == "z":
-            df = df.Alias("ptOtherGen", "postfsrOtherLep_pt")
-            df = df.Alias("absEtaOtherGen", f"postfsrOtherLep_absEta")
+            df = df.Alias("postfsrV_mass", "postfsrMV")
+            df = df.Alias("postfsrV_absY", "postfsrabsYV")
 
-            df = df.Alias("massVGen", "postfsrMV")
-            df = df.Define("absYVGen", "postfsrabsYV")
-
-        df = df.Alias("ptVGen", "postfsrPTV")
-        df = df.Alias("chargeVGen", "postfsrChargeV")
-
-    if "wlike" in mode:
-        df = df.Define("qGen", "event % 2 == 0 ? -1 : 1")
+        df = df.Alias("postfsrV_pt", "postfsrPTV")
+        df = df.Alias("postfsrV_charge", "postfsrChargeV")
 
     return df
 
 
-def select_fiducial_space(df, select=True, accept=True, mode="w_mass", **kwargs):
+def select_fiducial_space(
+    df, gen_level, select=True, accept=True, mode="w_mass", **kwargs
+):
     # Define a fiducial phase space and if select=True, either select events inside/outside
     # accept = True: select events in fiducial phase space
     # accept = False: reject events in fiducial pahse space
-    fiducial = kwargs.get("fiducial")
+
     selmap = {
         x: None
         for x in [
@@ -111,6 +108,7 @@ def select_fiducial_space(df, select=True, accept=True, mode="w_mass", **kwargs)
     }
 
     selections = kwargs.get("selections", [])[:]
+    fiducial = kwargs.get("fiducial")
     if fiducial:
         logger.info(
             f"Using default fiducial settings for selection {fiducial} for analysis {mode}"
@@ -130,46 +128,46 @@ def select_fiducial_space(df, select=True, accept=True, mode="w_mass", **kwargs)
             selmap[k] = kwargs.get(k)
 
     if selmap["abseta_max"] is not None:
-        selections.append(f"absEtaGen < {selmap['abseta_max']}")
+        selections.append(f"{gen_level}Lep_absEta < {selmap['abseta_max']}")
         if mode[0] == "z":
-            selections.append(f"absEtaOtherGen < {selmap['abseta_max']}")
+            selections.append(f"{gen_level}OtherLep_absEta < {selmap['abseta_max']}")
 
     if selmap["pt_min"] is not None:
         if "gen" in mode or "dilepton" in mode:
-            selections.append(f"ptGen > {selmap['pt_min']}")
+            selections.append(f"{gen_level}Lep_pt > {selmap['pt_min']}")
         if mode[0] == "z":
-            selections.append(f"ptOtherGen > {selmap['pt_min']}")
+            selections.append(f"{gen_level}OtherLep_pt > {selmap['pt_min']}")
 
     if selmap["pt_max"] is not None:
         if "gen" in mode or "dilepton" in mode:
             # Don't place explicit cut on lepton pT for unfolding of W/W-like, but do for gen selection
-            selections.append(f"ptGen < {selmap['pt_max']}")
+            selections.append(f"{gen_level}Lep_pt < {selmap['pt_max']}")
         if mode[0] == "z":
-            selections.append(f"ptOtherGen < {selmap['pt_max']}")
+            selections.append(f"{gen_level}OtherLep_pt < {selmap['pt_max']}")
 
     if selmap["mass_min"] is not None:
-        selections.append(f"massVGen > {selmap['mass_min']}")
+        selections.append(f"{gen_level}V_mass > {selmap['mass_min']}")
 
     if selmap["mass_max"] is not None:
-        selections.append(f"massVGen < {selmap['mass_max']}")
+        selections.append(f"{gen_level}V_mass < {selmap['mass_max']}")
 
     if selmap["mtw_min"] is not None:
-        selections.append(f"mTVGen > {selmap['mtw_min']}")
+        selections.append(f"{gen_level}V_mT > {selmap['mtw_min']}")
 
     selection = " && ".join(selections)
 
     if selection:
-        df = df.Define("acceptance", selection)
+        df = df.Define(f"{gen_level}_acceptance", selection)
         logger.info(f"Applying fiducial selection '{selection}'")
     else:
-        df = df.DefinePerSample("acceptance", "true")
+        df = df.DefinePerSample(f"{gen_level}_acceptance", "true")
 
     if select and accept:
         logger.debug("Select events in fiducial phase space")
-        df = df.Filter("acceptance")
+        df = df.Filter(f"{gen_level}_acceptance")
     elif select:
         logger.debug("Reject events in fiducial phase space")
-        df = df.Filter("acceptance == 0")
+        df = df.Filter(f"{gen_level}_acceptance == 0")
 
     return df
 
@@ -183,6 +181,7 @@ def add_xnorm_histograms(
     qcdScaleByHelicity_helper,
     unfolding_axes,
     unfolding_cols,
+    base_name="xnorm",
     add_helicity_axis=False,
 ):
     # add histograms before any selection
@@ -212,7 +211,7 @@ def add_xnorm_histograms(
 
         results.append(
             df_xnorm.HistoBoost(
-                "xnorm",
+                base_name,
                 xnorm_axes,
                 [*xnorm_cols, "nominal_weight_helicity"],
                 tensor_axes=[axis_helicity_multidim],
@@ -220,7 +219,7 @@ def add_xnorm_histograms(
         )
     else:
         results.append(
-            df_xnorm.HistoBoost("xnorm", xnorm_axes, [*xnorm_cols, "nominal_weight"])
+            df_xnorm.HistoBoost(base_name, xnorm_axes, [*xnorm_cols, "nominal_weight"])
         )
 
     syst_tools.add_theory_hists(
@@ -232,59 +231,47 @@ def add_xnorm_histograms(
         qcdScaleByHelicity_helper,
         xnorm_axes,
         xnorm_cols,
-        base_name="xnorm",
+        base_name=base_name,
         addhelicity=add_helicity_axis,
         nhelicity=9,
     )
 
 
-def reweight_to_fitresult(
-    fitresult, axes, poi_type="nois", cme=13, process="Z", expected=False, flow=True
-):
-    # requires fitresult generated from 'fitresult_pois_to_hist.py'
-    histname = "hist_" + "_".join([a.name for a in axes])
-    if expected:
-        histname += "_expected"
+def reweight_to_fitresult(filename, result=None, channel="ch0", flow=True):
+    import wums.boostHistHelpers as hh
+    from combinetf2.io_tools import get_fitresult
 
-    import pickle
+    fitresult, meta = get_fitresult(filename, result, meta=True)
 
-    with open(fitresult, "rb") as f:
-        r = pickle.load(f)
-        if process == "W":
-            corrh_0 = r["results"][poi_type][f"chan_{str(cme).replace('.','p')}TeV"][
-                "W_qGen0"
-            ][histname]
-            corrh_1 = r["results"][poi_type][f"chan_{str(cme).replace('.','p')}TeV"][
-                "W_qGen1"
-            ][histname]
+    hPrefit = fitresult["channels"][channel][f"hist_prefit_inclusive"].get()
+    hPostfit = fitresult["channels"][channel][f"hist_postfit_inclusive"].get()
+
+    hRatio = hh.divideHists(hPostfit, hPrefit)
+
+    # get the gen level the unfolding was performed for
+    level = meta["meta_info_input"]["meta_info"]["args"]["unfoldingLevel"]
+
+    axes = []
+    for ax in hRatio.axes:
+        name = ax.name
+        if "VGen" in ax.name:
+            suffix = "V"
+            var = ax.name.replace("VGen", "")
         else:
-            corrh = r["results"][poi_type][f"chan_{str(cme).replace('.','p')}TeV"][
-                process
-            ][histname]
+            suffix = "Lep"
+            var = ax.name.replace("Gen", "")
+        if var == "q":
+            var = "charge"
 
-    slices = [slice(None) for i in range(len(axes))]
+        ax._ax.metadata["name"] = f"{level}{suffix}_{var}"
+        axes.append(ax)
 
-    if "qGen" not in [a.name for a in axes]:
-        # CorrectionsTensor needs charge axis
-        if process == "Z":
-            axes.append(hist.axis.Regular(1, -1, 1, name="chargeVGen", flow=False))
-            slices.append(np.newaxis)
-            values = corrh.values(flow=flow)
-        elif process == "W":
-            axes.append(hist.axis.Regular(2, -2, 2, name="chargeVGen", flow=False))
-            slices.append(slice(None))
-            values = np.stack(
-                [corrh_0.values(flow=flow), corrh_1.values(flow=flow)], axis=-1
-            )
-
-    ch = hist.Hist(*axes, hist.axis.Regular(1, 0, 1, name="vars", flow=False))
-    slices.append(np.newaxis)
-
-    ch = theory_corrections.set_corr_ratio_flow(ch)
-    ch.values(flow=flow)[...] = values[*slices]
-
-    logger.debug(f"corrections from fitresult: {values}")
+    hCorr = hist.Hist(*axes, hist.axis.Regular(1, 0, 1, name="vars", flow=False))
+    hCorr.values(flow=flow)[...] = hRatio.values(flow=flow)[..., None]
 
     from wremnants.correctionsTensor_helper import makeCorrectionsTensor
 
-    return makeCorrectionsTensor(ch)
+    corr_helper = makeCorrectionsTensor(hCorr)
+    corr_helper.level = level
+
+    return corr_helper

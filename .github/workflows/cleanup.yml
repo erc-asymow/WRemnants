@@ -33,6 +33,3 @@ jobs:
 
       - name: cleanup main
         run: scripts/ci/cleanup_directory.sh $EOS_DIR/ScheduledBuilds/ 5
-
-      - name: cleanup unfolding
-        run: scripts/ci/cleanup_directory.sh $EOS_DIR/ScheduledBuilds_unfolding/ 5

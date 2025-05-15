@@ -1,6 +1,6 @@
 import hist
 
-from utilities import logging
+from wums import logging
 
 logger = logging.child_logger(__name__)
 
@@ -28,6 +28,7 @@ eta_binning = [
 
 
 def get_pt_eta_axes(
+    gen_level,
     n_bins_pt,
     min_pt,
     max_pt,
@@ -44,7 +45,7 @@ def get_pt_eta_axes(
     logger.debug(f"Gen bins pT: {axis_ptGen.edges}")
 
     axes = [axis_ptGen]
-    cols = ["ptGen"]
+    cols = [f"{gen_level}Lep_pt"]
 
     if n_bins_eta is not None:
         if n_bins_eta > 0:
@@ -56,17 +57,18 @@ def get_pt_eta_axes(
                 eta_binning, underflow=False, overflow=flow_eta, name="absEtaGen"
             )
         axes.append(axis_absEtaGen)
-        cols.append("absEtaGen")
+        cols.append(f"{gen_level}Lep_absEta")
         logger.debug(f"Gen bins |eta|: {axis_absEtaGen.edges}")
 
     if add_out_of_acceptance_axis:
         axes.append(hist.axis.Boolean(name="acceptance"))
-        cols.append("acceptance")
+        cols.append(f"{gen_level}_acceptance")
 
     return axes, cols
 
 
 def get_pt_eta_charge_axes(
+    gen_level,
     n_bins_pt,
     min_pt,
     max_pt,
@@ -77,6 +79,7 @@ def get_pt_eta_charge_axes(
 ):
 
     axes, cols = get_pt_eta_axes(
+        gen_level,
         n_bins_pt,
         min_pt,
         max_pt,
@@ -87,37 +90,35 @@ def get_pt_eta_charge_axes(
     )
 
     axis_qGen = hist.axis.Regular(
-        2, -2.0, 2.0, underflow=False, overflow=False, name="qGen"
+        2, -2.0, 2.0, underflow=False, overflow=False, name=f"qGen"
     )
     axes.append(axis_qGen)
-    cols.append("qGen")
+    cols.append(f"{gen_level}Lep_charge")
 
     return axes, cols
 
 
-def get_dilepton_axes(gen_vars, gen_axes, add_out_of_acceptance_axis=False):
+def get_dilepton_axes(gen_vars, gen_axes, gen_level, add_out_of_acceptance_axis=False):
     # axes for fiducial measurement of Z in dilepton e.g. pT(Z), |yZ|
 
     axes = []
     cols = []
     selections = []
 
-    for var in gen_vars:
-        if var == "helicitySig":
-            continue
-        axes.append(gen_axes[var])
-        cols.append(var)
-
     # selections for out of fiducial region, use overflow bin in ptVGen (i.e. not treated as out of acceptance)
-    if "ptVGen" in gen_vars and not gen_axes["ptVGen"].traits.overflow:
-        selections.append("ptVGen < {0}".format(gen_axes["ptVGen"].edges[-1]))
+    for v in gen_vars:
+        var = v.replace("qVGen", "charge").replace("VGen", "")
+        axes.append(gen_axes[v])
+        cols.append(f"{gen_level}V_{var}")
 
-    if "absYVGen" in gen_vars:
-        selections.append("absYVGen < {0}".format(gen_axes["absYVGen"].edges[-1]))
+        if v == "ptVGen" and not gen_axes["ptVGen"].traits.overflow:
+            selections.append(f"{gen_level}V_pt < {gen_axes['ptVGen'].edges[-1]}")
+        elif v == "absYVGen":
+            selections.append(f"{gen_level}V_absY < {gen_axes['absYVGen'].edges[-1]}")
 
     if add_out_of_acceptance_axis:
         axes.append(hist.axis.Boolean(name="acceptance"))
-        cols.append("acceptance")
+        cols.append(f"{gen_level}_acceptance")
 
     return axes, cols, selections
 

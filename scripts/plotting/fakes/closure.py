@@ -3,13 +3,13 @@ import matplotlib as mpl
 import mplhep as hep
 import numpy as np
 
-from utilities import boostHistHelpers as hh
-from utilities import logging, parsing
-from utilities.io_tools import output_tools
+from utilities import parsing
 from utilities.styles import styles
 from wremnants import histselections as sel
 from wremnants import plot_tools
 from wremnants.datasets.datagroups import Datagroups
+from wums import boostHistHelpers as hh
+from wums import logging, output_tools
 
 
 def plot_closure(
@@ -300,7 +300,7 @@ def plot_closure(
         rrange = args.rrange
 
     if ratio:
-        fig, ax1, ax2 = plot_tools.figureWithRatio(
+        fig, ax1, ratio_axes = plot_tools.figureWithRatio(
             hss[0],
             xlabel=xlabel,
             ylabel=ylabel,
@@ -311,6 +311,7 @@ def plot_closure(
             width_scale=1.2,
             ylim=(ymin, ymax),
         )
+        ax2 = ratio_axes[-1]
     else:
         fig, ax1 = plot_tools.figure(
             hss[0],
